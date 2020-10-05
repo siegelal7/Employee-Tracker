@@ -1,6 +1,7 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql");
 const consoleTable = require("console.table");
+var resId;
 
 const roles = [
   "Sales Lead",
@@ -106,11 +107,12 @@ const viewByDept = () => {
     ])
     .then(function (data) {
       // console.log(JSON.stringify(data) + "\n");
+
       const query = connection.query(
-        `SELECT e.id, e.firstName, e.lastName, d.departmentName AS "department"
-  FROM employee e
-  INNER JOIN department d
-  ON e.roleId = d.id;`,
+        `SELECT e.id, Concat(e.firstName, " ", e.lastName) as "name", d.departmentName AS "department"
+        FROM employee e
+        INNER JOIN department d
+        ON e.roleId = d.id;`,
         function (err, res) {
           if (err) throw err;
           console.log(res);
@@ -223,15 +225,24 @@ const addEmployee = () => {
 };
 
 function determineDepartmentId(data) {
-  if (data.departmentName === "Sales") {
+  if (data.roleId === 1 || data.roleId === 2) {
     return 1;
-  } else if (data.departmentName === "Legal") {
+  } else if (data.roleId === 7 || data.roleId === 8) {
     return 2;
-  } else if (data.departmentName === "Finance") {
+  } else if (data.roleId === 5 || data.roleId === 6) {
     return 3;
-  } else if (data.departmentName === "Engineering") {
+  } else if (data.roleId === 3 || data.roleId === 4) {
     return 4;
   }
+  // if (data.departmentName === "Sales") {
+  //   return 1;
+  // } else if (data.departmentName === "Legal") {
+  //   return 2;
+  // } else if (data.departmentName === "Finance") {
+  //   return 3;
+  // } else if (data.departmentName === "Engineering") {
+  //   return 4;
+  // }
 }
 
 function determineRoleId(data) {
@@ -372,20 +383,22 @@ function updateManager() {
         choices: employees,
       },
     ])
-    .then(function (data) {
+    .then(async function (data) {
+      // const managerId = determineId(data.manager);
       // console.log(data.who);
       const firstName = data.who.split(" ")[0];
       const lastName = data.who.split(" ")[1];
       // console.log(`\n${data.manager}\n`);
       // console.log(data);
-      // console.log(`\n${data.manager}\n`);
-      const managerId = determineId(data.manager);
+      // console.log(`Data.Manager val:${data.manager}\n`);
+
+      // console.log(`Manager id: ${managerId}\n\n`);
       const query = connection.query(
         "UPDATE employee SET ? WHERE ? AND ?",
         [
           {
             //FIXME: not working for some reason
-            managerId: managerId,
+            managerId: await determineId(data.manager),
           },
           {
             firstName: firstName,
@@ -405,25 +418,27 @@ function updateManager() {
 }
 
 function determineId(data) {
-  connection.query("SELECT * FROM employee", function (err, res) {
-    if (err) throw err;
-    // console.log(res);
-    // let resId = "";
-    for (let i = 0; i < res.length; i++) {
-      if (
-        res[i].firstName == data.split(" ")[0] &&
-        res[i].lastName == data.split(" ")[1]
-      ) {
-        console.log(`\n${res[i].id}\n`);
-        return res[i].id;
-      } else {
-        console.log("hmm");
-        return 1;
+  return new Promise((resolve, reject) => {
+    connection.query("SELECT * FROM employee", function (err, res) {
+      if (err) reject(err);
+      for (let i = 0; i < res.length; i++) {
+        if (
+          res[i].firstName === data.split(" ")[0] &&
+          res[i].lastName === data.split(" ")[1]
+        ) {
+          // console.log(`\n${res[i].id}\n`);
+          resId = res[i].id;
+        } // else {
+        //   console.log("hmm");
+        //   // return 1;
+        // }
       }
-    }
-    // return resId;
+      console.log(`resId: ${resId}`);
+      resolve(resId);
+    });
   });
 }
-// determineId("Peenur Snout");
+
+// determineId("Andrew Siegel");
 allEmployees();
 init();
