@@ -40,18 +40,16 @@ INSERT INTO department (departmentName) VALUES ("Legal");
 INSERT INTO department (departmentName) VALUES ("Finance");
 INSERT INTO department (departmentName) VALUES ("Engineering");
 
-SELECT e.id, e.firstName, r.title, r.salary, d.departmentName, em.firstName AS "manager"
-FROM employee e
-LEFT JOIN employee em ON em.id = e.managerId
-INNER JOIN role r ON e.roleId = r.id
-INNER JOIN department d ON r.departmentId = d.id;
-
-
 INSERT INTO employee (firstName, lastName, roleId) VALUES ("Andrew", "Siegel", 4);
 INSERT INTO employee (firstName, lastName, roleId) VALUES ("Tester", "Employee", 1);
 INSERT INTO employee (firstName, lastName, roleId) VALUES ("Amanda", "Newquist", 8);
 INSERT INTO employee (firstName, lastName, roleId) VALUES ("David", "Siegel", 6);
 
+SELECT e.id, e.firstName, r.title, r.salary, d.departmentName, em.firstName AS "manager"
+FROM employee e
+LEFT JOIN employee em ON em.id = e.managerId
+INNER JOIN role r ON e.roleId = r.id
+INNER JOIN department d ON r.departmentId = d.id;
 
 INSERT INTO role (title,salary, departmentId) VALUES ("Test role", 23423.00, 1);
 
