@@ -27,6 +27,7 @@ var connection = mysql.createConnection({
 connection.connect(function (err) {
   if (err) throw err;
   console.log("connected as id" + connection.threadId);
+  init();
 });
 
 // const employees = allEmployees() || [];
@@ -106,13 +107,11 @@ const viewByDept = () => {
       },
     ])
     .then(function (data) {
-      // console.log(JSON.stringify(data) + "\n");
-
       const query = connection.query(
-        `SELECT e.id, Concat(e.firstName, " ", e.lastName) as "name", d.departmentName AS "department"
+        `SELECT e.id, e.roleId, Concat(e.firstName, " ", e.lastName) as "name", d.departmentName AS "department", d.id
         FROM employee e
-        INNER JOIN department d
-        ON e.roleId = d.id;`,
+        INNER JOIN role r ON e.roleId = r.id
+        inner join department d on r.departmentId = d.id;`,
         function (err, res) {
           if (err) throw err;
           console.log(res);
@@ -149,8 +148,6 @@ const viewByManager = () => {
     ])
     .then(function (data) {
       const meetCriteria = [];
-      const surname = data.manager.split(" ")[1];
-      // console.log(surname);
       const query = connection.query(
         `SELECT e.FirstName, e.lastName, r.title, CONCAT(em.firstName, " ", em.lastName) AS "manager"
         FROM employee e
@@ -159,8 +156,6 @@ const viewByManager = () => {
         `,
         function (err, res) {
           if (err) throw err;
-          // console.log("someting happened");
-          // console.log(res[3].manager);
           for (let i = 0; i < res.length; i++) {
             if (res[i].manager == data.manager) {
               meetCriteria.push(res[i]);
@@ -197,12 +192,6 @@ const addEmployee = () => {
         choices: roles,
         name: "role",
       },
-      //   {
-      //     type: "list",
-      //     message: "Who is the employee's manager?",
-      //     choices: employees,
-      //     name: "manager",
-      //   },
     ])
     .then(function (data) {
       const first = data.firstName;
@@ -272,12 +261,8 @@ function allEmployees() {
     for (let i = 0; i < res.length; i++) {
       const emp = `${res[i].firstName} ${res[i].lastName}`;
       employees.push(emp);
-      // return employees;
     }
-    // return employees;
-    // return res;
   });
-  // console.log(employees);
 }
 
 function removeEmployee() {
@@ -291,9 +276,7 @@ function removeEmployee() {
       },
     ])
     .then(function (data) {
-      // console.log(data);
       employees = employees.filter((i) => i !== data.remove);
-      // console.log(employees);
       console.log(`Deleting all ${data.remove.split(" ")[0]}...\n`);
       const firstName = data.remove.split(" ")[0];
       const lastName = data.remove.split(" ")[1];
@@ -310,7 +293,7 @@ function removeEmployee() {
         function (err, res) {
           if (err) throw err;
           console.log(res.affectedRows + " employees deleted!\n");
-          // Call readProducts AFTER the DELETE completes
+
           init();
         }
       );
@@ -338,8 +321,6 @@ function updateEmployeeRole() {
       const firstName = data.remove.split(" ")[0];
       const lastName = data.remove.split(" ")[1];
       console.log("Updating employee role...\n");
-      // console.log(data.role);
-      // let roleId = determineRoleId(data.role);
       var query = connection.query(
         "UPDATE employee SET ? WHERE ? AND ?",
         [
@@ -356,12 +337,9 @@ function updateEmployeeRole() {
         function (err, res) {
           if (err) throw err;
           console.log(res.affectedRows + " employees updated!\n");
-          // Call deleteProduct AFTER the UPDATE completes
           init();
         }
       );
-
-      // logs the actual query being run
       console.log(query.sql);
     });
 }
@@ -384,20 +362,12 @@ function updateManager() {
       },
     ])
     .then(async function (data) {
-      // const managerId = determineId(data.manager);
-      // console.log(data.who);
       const firstName = data.who.split(" ")[0];
       const lastName = data.who.split(" ")[1];
-      // console.log(`\n${data.manager}\n`);
-      // console.log(data);
-      // console.log(`Data.Manager val:${data.manager}\n`);
-
-      // console.log(`Manager id: ${managerId}\n\n`);
       const query = connection.query(
         "UPDATE employee SET ? WHERE ? AND ?",
         [
           {
-            //FIXME: not working for some reason
             managerId: await determineId(data.manager),
           },
           {
@@ -426,19 +396,13 @@ function determineId(data) {
           res[i].firstName === data.split(" ")[0] &&
           res[i].lastName === data.split(" ")[1]
         ) {
-          // console.log(`\n${res[i].id}\n`);
           resId = res[i].id;
-        } // else {
-        //   console.log("hmm");
-        //   // return 1;
-        // }
+        }
       }
-      console.log(`resId: ${resId}`);
       resolve(resId);
     });
   });
 }
 
-// determineId("Andrew Siegel");
 allEmployees();
-init();
+// init();
