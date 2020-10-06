@@ -13,7 +13,7 @@ const roles = [
   "Legal Team Lead",
   "Lawyer",
 ];
-const departments = ["Finance", "Engineering", "Sales", "Legal"];
+let departments = [];
 let employees = [];
 
 var connection = mysql.createConnection({
@@ -27,6 +27,8 @@ var connection = mysql.createConnection({
 connection.connect(function (err) {
   if (err) throw err;
   console.log("connected as id" + connection.threadId);
+  allEmployees();
+  allDepartments();
   init();
 });
 
@@ -46,6 +48,7 @@ function init() {
           "View all employees by manager",
           "Add employee",
           "Remove employee",
+          "Add/Remove a department",
           "Update employee role",
           "Update employee manager",
           "Exit",
@@ -72,8 +75,9 @@ const determineAction = (data) => {
     removeEmployee();
   } else if (data.action === "Update employee role") {
     updateEmployeeRole();
+  } else if (data.action === "Add/Remove a department") {
+    editDepartments();
   } else if (data.action === "Update employee manager") {
-    //TODO: figure out how to do this function
     updateManager();
   } else if (data.action === "Exit") {
     connection.end();
@@ -95,7 +99,6 @@ const viewAll = () => {
   );
 };
 
-//FIXME:
 const viewByDept = () => {
   inquirer
     .prompt([
@@ -107,21 +110,26 @@ const viewByDept = () => {
       },
     ])
     .then(function (data) {
+      // adding where d.departmentName= ? gave me odd results here..
       const query = connection.query(
-        `SELECT e.id, e.roleId, Concat(e.firstName, " ", e.lastName) as "name", d.departmentName AS "department", d.id
+        `SELECT e.id, Concat(e.firstName, " ", e.lastName) as "name", r.title, d.departmentName AS "department", d.id, CONCAT(em.firstName, " ",em.lastName) AS "manager"
         FROM employee e
         INNER JOIN role r ON e.roleId = r.id
-        inner join department d on r.departmentId = d.id;`,
+        inner join department d on r.departmentId = d.id
+        LEFT JOIN employee em ON em.id = e.managerId;`,
+        // [data.department],
         function (err, res) {
           if (err) throw err;
-          console.log(res);
+          if (res.length > 1) {
+            console.table(res);
+          } else if (res.length == 0) {
+            console.log(`\n\nNo one in that department\n\n`);
+          }
           const meetCriteria = [];
           // console.log(data.department);
           for (let i = 0; i < res.length; i++) {
             if (res[i].department == data.department) {
-              // console.table(res[i]);
               meetCriteria.push(res[i]);
-              // init();
             }
           }
           if (meetCriteria.length > 0) {
@@ -265,6 +273,17 @@ function allEmployees() {
   });
 }
 
+function allDepartments() {
+  connection.query("SELECT * FROM department", function (err, res) {
+    if (err) throw err;
+
+    for (let i = 0; i < res.length; i++) {
+      const emp = `${res[i].departmentName}`;
+      departments.push(emp);
+    }
+  });
+}
+
 function removeEmployee() {
   inquirer
     .prompt([
@@ -294,6 +313,77 @@ function removeEmployee() {
           if (err) throw err;
           console.log(res.affectedRows + " employees deleted!\n");
 
+          init();
+        }
+      );
+    });
+}
+
+function editDepartments() {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        message: "Would you like to add or remove a department?",
+        choices: ["add", "remove"],
+        name: "addOrRemove",
+      },
+    ])
+    .then(function (res) {
+      if (res.addOrRemove === "add") {
+        addDepartment();
+      } else if (res.addOrRemove === "remove") {
+        removeDepartment();
+      }
+    });
+}
+
+function addDepartment() {
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        message: "What department would you like to add?",
+        name: "department",
+      },
+    ])
+    .then(function (data) {
+      departments.push(data.department);
+      console.log(`Depts: ${departments}`);
+
+      // console.log("Updating employee role...\n");
+      var query = connection.query(
+        "insert into department (departmentName) values (?)",
+        [data.department],
+        function (err, res) {
+          if (err) throw err;
+          console.log(res.affectedRows + " department added!\n");
+          init();
+        }
+      );
+      console.log(query.sql);
+    });
+}
+
+function removeDepartment() {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "departmentToRemove",
+        choices: departments,
+        message: "Which department would you like to remove",
+      },
+    ])
+    .then(function (data) {
+      departments = departments.filter((i) => i !== data.departmentToRemove);
+      console.log("\ndepartments:", departments);
+      connection.query(
+        "delete from department where ?",
+        [{ departmentName: data.departmentToRemove }],
+        function (err, res) {
+          if (err) throw err;
+          console.log(`Removed ${data.departmentToRemove}`);
           init();
         }
       );
@@ -404,5 +494,6 @@ function determineId(data) {
   });
 }
 
-allEmployees();
+// allEmployees();
+// allDepartments();
 // init();
