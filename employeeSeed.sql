@@ -45,21 +45,4 @@ INSERT INTO employee (firstName, lastName, roleId) VALUES ("Tester", "Employee",
 INSERT INTO employee (firstName, lastName, roleId) VALUES ("Amanda", "Newquist", 8);
 INSERT INTO employee (firstName, lastName, roleId) VALUES ("David", "Siegel", 6);
 
-SELECT e.id, e.firstName, r.title, r.salary, d.departmentName, em.firstName AS "manager"
-FROM employee e
-LEFT JOIN employee em ON em.id = e.managerId
-INNER JOIN role r ON e.roleId = r.id
-INNER JOIN department d ON r.departmentId = d.id;
 
-INSERT INTO role (title,salary, departmentId) VALUES ("Test role", 23423.00, 1);
-
-SELECT employee.firstName, employee.lastName, role.title, department.departmentName
-FROM role
-INNER JOIN department ON role.departmentId = department.id
-INNER JOIN employee ON role.id = employee.roleId;
-
--- returning emp. if their roleId matches departmentId
-SELECT e.id, e.firstName, e.lastName, d.departmentName
-FROM employee e
-INNER JOIN department d
-ON e.roleId = d.id;
