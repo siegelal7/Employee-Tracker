@@ -3,7 +3,7 @@ const mysql = require("mysql");
 const consoleTable = require("console.table");
 var resId;
 
-const roles = [
+let roles = [
   "Sales Lead",
   "Salesperson",
   "Lead Engineer",
@@ -49,6 +49,7 @@ function init() {
           "Add employee",
           "Remove employee",
           "Add/Remove a department",
+          //"Add/Remove a role",
           "Update employee role",
           "Update employee manager",
           "Exit",
@@ -65,7 +66,6 @@ const determineAction = (data) => {
   if (data.action === "View all employees") {
     viewAll();
   } else if (data.action === "View all employees by department") {
-    //TODO: figure out how to do this function
     viewByDept();
   } else if (data.action === "View all employees by manager") {
     viewByManager();
@@ -77,7 +77,10 @@ const determineAction = (data) => {
     updateEmployeeRole();
   } else if (data.action === "Add/Remove a department") {
     editDepartments();
-  } else if (data.action === "Update employee manager") {
+  } //else if (data.action === "Add/Remove a role") {
+  //   editRoles();
+  // }
+  else if (data.action === "Update employee manager") {
     updateManager();
   } else if (data.action === "Exit") {
     connection.end();
@@ -389,6 +392,57 @@ function removeDepartment() {
       );
     });
 }
+
+// function editRoles() {
+//   inquirer
+//     .prompt([
+//       {
+//         type: "list",
+//         message: "Would you like to add or remove a role?",
+//         choices: ["add", "remove"],
+//         name: "addOrRemove",
+//       },
+//     ])
+//     .then(function (res) {
+//       if (res.addOrRemove === "add") {
+//         addRole();
+//       } else if (res.addOrRemove === "remove") {
+//         removeRole();
+//       }
+//     });
+// }
+
+// function addRole() {
+//   inquirer
+//     .prompt([
+//       {
+//         type: "input",
+//         message: "What role would you like to add?",
+//         name: "role",
+//       },
+//       {
+//         type: "number",
+//         message: "What will the salary of this role be?",
+//         name: "salary",
+//       },
+//     ])
+//     .then(function (data) {
+//       roles.push(data.role);
+//       console.log(`Depts: ${roles}`);
+
+//       // console.log("Updating employee role...\n");
+//       var query = connection.query(
+//         "insert into role (title, salary) values (?, ?)",
+//         [data.role, data.salary],
+//         function (err, res) {
+//           if (err) throw err;
+//           console.log(res.affectedRows + " role added!\n");
+//           init();
+//         }
+//       );
+//       console.log(query.sql);
+//     });
+// }
 
 function updateEmployeeRole() {
   inquirer
