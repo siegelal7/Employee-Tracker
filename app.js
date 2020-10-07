@@ -4,14 +4,14 @@ const consoleTable = require("console.table");
 var resId;
 
 let roles = [
-  "Sales Lead",
-  "Salesperson",
-  "Lead Engineer",
-  "Software Engineer",
-  "Account Manager",
-  "Accountant",
-  "Legal Team Lead",
-  "Lawyer",
+  // "Sales Lead",
+  // "Salesperson",
+  // "Lead Engineer",
+  // "Software Engineer",
+  // "Account Manager",
+  // "Accountant",
+  // "Legal Team Lead",
+  // "Lawyer",
 ];
 let departments = [];
 let employees = [];
@@ -27,9 +27,12 @@ var connection = mysql.createConnection({
 connection.connect(function (err) {
   if (err) throw err;
   console.log("connected as id" + connection.threadId);
+  allRoles();
   allEmployees();
   allDepartments();
   init();
+  console.log(`departments: ${departments}`);
+  console.log(`roles: ${roles}`);
 });
 
 // const employees = allEmployees() || [];
@@ -45,11 +48,12 @@ function init() {
         choices: [
           "View all employees",
           "View all employees by department",
+          "View payroll by department",
           "View all employees by manager",
           "Add employee",
           "Remove employee",
           "Add/Remove a department",
-          //"Add/Remove a role",
+          "Add/Remove a role",
           "Update employee role",
           "Update employee manager",
           "Exit",
@@ -77,11 +81,12 @@ const determineAction = (data) => {
     updateEmployeeRole();
   } else if (data.action === "Add/Remove a department") {
     editDepartments();
-  } //else if (data.action === "Add/Remove a role") {
-  //   editRoles();
-  // }
-  else if (data.action === "Update employee manager") {
+  } else if (data.action === "Add/Remove a role") {
+    editRoles();
+  } else if (data.action === "Update employee manager") {
     updateManager();
+  } else if (data.action === "View payroll by department") {
+    budgetByDepartment();
   } else if (data.action === "Exit") {
     connection.end();
   }
@@ -96,7 +101,9 @@ const viewAll = () => {
       INNER JOIN department d ON r.departmentId = d.id`,
     function (err, res) {
       if (err) throw err;
+
       console.table(res);
+
       init();
     }
   );
@@ -137,6 +144,7 @@ const viewByDept = () => {
           }
           if (meetCriteria.length > 0) {
             console.table(meetCriteria);
+
             init();
           } else {
             console.log("No one in that department");
@@ -174,6 +182,7 @@ const viewByManager = () => {
           }
           if (meetCriteria.length > 0) {
             console.table(meetCriteria);
+
             init();
           } else {
             console.log("That person doesn't manage any employees");
@@ -224,26 +233,26 @@ const addEmployee = () => {
     });
 };
 
-function determineDepartmentId(data) {
-  if (data.roleId === 1 || data.roleId === 2) {
-    return 1;
-  } else if (data.roleId === 7 || data.roleId === 8) {
-    return 2;
-  } else if (data.roleId === 5 || data.roleId === 6) {
-    return 3;
-  } else if (data.roleId === 3 || data.roleId === 4) {
-    return 4;
-  }
-  // if (data.departmentName === "Sales") {
-  //   return 1;
-  // } else if (data.departmentName === "Legal") {
-  //   return 2;
-  // } else if (data.departmentName === "Finance") {
-  //   return 3;
-  // } else if (data.departmentName === "Engineering") {
-  //   return 4;
-  // }
-}
+// function determineDepartmentId(data) {
+//   if (data.roleId === 1 || data.roleId === 2) {
+//     return 1;
+//   } else if (data.roleId === 7 || data.roleId === 8) {
+//     return 2;
+//   } else if (data.roleId === 5 || data.roleId === 6) {
+//     return 3;
+//   } else if (data.roleId === 3 || data.roleId === 4) {
+//     return 4;
+//   }
+// if (data.departmentName === "Sales") {
+//   return 1;
+// } else if (data.departmentName === "Legal") {
+//   return 2;
+// } else if (data.departmentName === "Finance") {
+//   return 3;
+// } else if (data.departmentName === "Engineering") {
+//   return 4;
+// }
+// }
 
 function determineRoleId(data) {
   if (data.role === "Salesperson") {
@@ -273,6 +282,20 @@ function allEmployees() {
       const emp = `${res[i].firstName} ${res[i].lastName}`;
       employees.push(emp);
     }
+  });
+}
+
+// allRoles();
+function allRoles() {
+  connection.query(`SELECT title FROM role;`, function (err, res) {
+    if ((err, res))
+      if (res.length > 0) {
+        // console.log(`Roles: ${JSON.stringify(res)}`);
+        for (let i = 0; i < res.length; i++) {
+          const roleString = res[i].title;
+          roles.push(roleString);
+        }
+      }
   });
 }
 
@@ -393,56 +416,127 @@ function removeDepartment() {
     });
 }
 
-// function editRoles() {
-//   inquirer
-//     .prompt([
-//       {
-//         type: "list",
-//         message: "Would you like to add or remove a role?",
-//         choices: ["add", "remove"],
-//         name: "addOrRemove",
-//       },
-//     ])
-//     .then(function (res) {
-//       if (res.addOrRemove === "add") {
-//         addRole();
-//       } else if (res.addOrRemove === "remove") {
-//         removeRole();
-//       }
-//     });
-// }
+function editRoles() {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        message: "Would you like to add or remove a role?",
+        choices: ["add", "remove"],
+        name: "addOrRemove",
+      },
+    ])
+    .then(function (res) {
+      if (res.addOrRemove === "add") {
+        addRole();
+      } else if (res.addOrRemove === "remove") {
+        removeRole();
+      }
+    });
+}
+var val;
+function addRole() {
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        message: "What role would you like to add?",
+        name: "role",
+      },
+      {
+        type: "number",
+        message: "What will the salary of this role be?",
+        name: "salary",
+      },
+      {
+        type: "list",
+        message: "Which department does the role belong to?",
+        choices: departments,
+        name: "department",
+      },
+    ])
+    .then(async function (data) {
+      roles.push(data.role);
+      // console.log(`Depts: ${roles}`);
+      await determineDepartment(data);
+      // await determineDepartment(data);
+      // console.log(deptId);
+      // console.log(`HERE: ${resId}`);
+      // console.log("Updating employee role...\n");
+      var query = connection.query(
+        "insert into role (title, salary) values (?, ?)",
+        [data.role, data.salary],
+        function (err, res) {
+          if (err) throw err;
+          // determineDepartment(data);
+          console.log(res.affectedRows + " role added!\n");
+          // init();
+          updateRoleDepartment(data);
+        }
+      );
+      console.log(query.sql);
+    });
+}
+async function updateRoleDepartment(data) {
+  var query = connection.query(
+    "UPDATE role SET ? WHERE ?",
+    [
+      {
+        departmentId: await determineDepartment(data),
+      },
+      {
+        title: data.role,
+      },
+    ],
+    function (err, res) {
+      if (err) throw err;
+      console.log(res.affectedRows + " employees updated!\n");
+      init();
+      console.log(`BLAH: ${query.sql}`);
+    }
+  );
+}
 
-// function addRole() {
-//   inquirer
-//     .prompt([
-//       {
-//         type: "input",
-//         message: "What role would you like to add?",
-//         name: "role",
-//       },
-//       {
-//         type: "number",
-//         message: "What will the salary of this role be?",
-//         name: "salary",
-//       },
-//     ])
-//     .then(function (data) {
-//       roles.push(data.role);
-//       console.log(`Depts: ${roles}`);
+function determineDepartment(data) {
+  return new Promise((resolve, reject) => {
+    const quer = connection.query(
+      "select * from department where departmentName=?",
+      [data.department],
+      function (err, res) {
+        if (err) reject(err);
+        val = res.id;
 
-//       // console.log("Updating employee role...\n");
-//       var query = connection.query(
-//         "insert into role (title, salary) values (?, ?)",
-//         [data.role, data.salary],
-//         function (err, res) {
-//           if (err) throw err;
-//           console.log(res.affectedRows + " role added!\n");
-//           init();
-//         }
-//       );
-//       console.log(query.sql);
-//     });
-// }
+        // console.log(quer.sql);
+        resolve(val);
+      }
+    );
+  });
+}
+
+function removeRole() {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "role",
+        choices: roles,
+        message: "Which role would you like to remove",
+      },
+    ])
+    .then(function (data) {
+      roles = roles.filter((i) => i !== data.role);
+      console.log("\ndepartments:", roles);
+      connection.query(
+        "delete from role where ?",
+        [{ title: data.role }],
+        function (err, res) {
+          if (err) throw err;
+          console.log(`Removed ${data.role}`);
+          init();
+        }
+      );
+    });
+}
 
 function updateEmployeeRole() {
   inquirer
@@ -488,7 +582,6 @@ function updateEmployeeRole() {
     });
 }
 
-//FIXME:
 function updateManager() {
   inquirer
     .prompt([
@@ -548,6 +641,78 @@ function determineId(data) {
   });
 }
 
+function budgetByDepartment() {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        message: "Which department would you like to see the budget for?",
+        name: "budget",
+        choices: departments,
+      },
+    ])
+    .then(async function (data) {
+      var deptId = await determineDepartmentId(data);
+      // let first = deptId.split(" ");
+      console.log(`first val:${deptId}\n`);
+      // adding where d.departmentName= ? gave me odd results here..
+      const query = connection.query(
+        `select sum(r.salary) as "total salary" from role r
+        inner join employee e on r.id = e.roleId where r.id= ? or r.id = ?`,
+        [3, 4],
+        function (err, res) {
+          if (err) throw err;
+          if (res.length > 1) {
+            console.table(res);
+          } else if (res.length == 0) {
+            console.log(`\n\nNo one in that department\n\n`);
+          }
+          const meetCriteria = [];
+          // console.log(data.department);
+          for (let i = 0; i < res.length; i++) {
+            if (res[i].department == data.department) {
+              meetCriteria.push(res[i]);
+            }
+          }
+          if (meetCriteria.length > 0) {
+            console.table(meetCriteria);
+
+            init();
+          } else {
+            console.log("No one in that department");
+            init();
+          }
+        }
+      );
+    });
+}
+
+function determineDepartmentId(data) {
+  return new Promise((resolve, reject) => {
+    let returnVal = "";
+    if (data.department === 1) {
+      // return 1;
+      returnVal = "12";
+      // resolve(returnVal);
+    } else if (data.department === 2) {
+      returnVal = "78";
+      // resolve(returnVal);
+    } else if (data.department === 3) {
+      returnVal = "56";
+      // resolve(returnVal);
+    } else if (data.department === 4) {
+      returnVal = "34";
+      // resolve(returnVal);
+    }
+    resolve(returnVal);
+  });
+}
 // allEmployees();
 // allDepartments();
 // init();
+// var tester = {
+//   name: "stave",
+//   department: 2,
+// };
+// var testy = determineDepartmentId(tester);
+// console.log(testy);
