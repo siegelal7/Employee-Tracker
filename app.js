@@ -2,7 +2,15 @@ const inquirer = require("inquirer");
 const mysql = require("mysql");
 const consoleTable = require("console.table");
 var resId;
-
+console.log(`╔═══╗ ╔╗       ╔═╗ ╔═╗               ╔╗    ╔═══╗                 ╔╗ ╔╗ 
+║╔═╗║╔╝╚╗      ║╔╝ ║╔╝               ║║    ║╔═╗║                 ║║ ║║ 
+║╚══╗╚╗╔╝╔══╗ ╔╝╚╗╔╝╚╗    ╔══╗ ╔═╗ ╔═╝║    ║╚═╝║╔══╗ ╔╗ ╔╗╔═╗╔══╗║║ ║║ 
+╚══╗║ ║║ ╚ ╗║ ╚╗╔╝╚╗╔╝    ╚ ╗║ ║╔╗╗║╔╗║    ║╔══╝╚ ╗║ ║║ ║║║╔╝║╔╗║║║ ║║ 
+║╚═╝║ ║╚╗║╚╝╚╗ ║║  ║║     ║╚╝╚╗║║║║║╚╝║    ║║   ║╚╝╚╗║╚═╝║║║ ║╚╝║║╚╗║╚╗
+╚═══╝ ╚═╝╚═══╝ ╚╝  ╚╝     ╚═══╝╚╝╚╝╚══╝    ╚╝   ╚═══╝╚═╗╔╝╚╝ ╚══╝╚═╝╚═╝
+                                                     ╔═╝║              
+                                                     ╚══╝              
+`);
 let roles = [
   // "Sales Lead",
   // "Salesperson",
@@ -434,6 +442,7 @@ function editRoles() {
       }
     });
 }
+
 var val;
 function addRole() {
   inquirer
@@ -458,7 +467,8 @@ function addRole() {
     .then(async function (data) {
       roles.push(data.role);
       // console.log(`Depts: ${roles}`);
-      await determineDepartment(data);
+      // await determineDepartment(data);
+
       // await determineDepartment(data);
       // console.log(deptId);
       // console.log(`HERE: ${resId}`);
@@ -477,6 +487,7 @@ function addRole() {
       console.log(query.sql);
     });
 }
+
 async function updateRoleDepartment(data) {
   var query = connection.query(
     "UPDATE role SET ? WHERE ?",
@@ -651,15 +662,19 @@ function budgetByDepartment() {
         choices: departments,
       },
     ])
-    .then(async function (data) {
-      var deptId = await determineDepartmentId(data);
+    .then(function (data) {
+      // var deptId = await determineDepartmentId(data);
       // let first = deptId.split(" ");
-      console.log(`first val:${deptId}\n`);
+      const indexValue = departments.indexOf(data.budget) + 1;
+      console.log(`@#$@val:${JSON.stringify(indexValue)}\n`);
       // adding where d.departmentName= ? gave me odd results here..
       const query = connection.query(
-        `select sum(r.salary) as "total salary" from role r
-        inner join employee e on r.id = e.roleId where r.id= ? or r.id = ?`,
-        [3, 4],
+        `SELECT sum(r.salary), d.departmentName
+        FROM employee e
+        INNER JOIN role r ON e.roleId = r.id
+        INNER JOIN department d ON r.departmentId = d.id
+        where r.departmentId=?`,
+        [indexValue],
         function (err, res) {
           if (err) throw err;
           if (res.length > 1) {

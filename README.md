@@ -18,7 +18,8 @@ A simple CLI to keep track of your employees and track your payrole per departme
 
 ## Video
 
-Url goes here
+Link to a video walk-through of the command line app:
+https://drive.google.com/file/d/1g_ZMnSptqIKHuf-woQblIUmM3G1oF3YD/view
 
 ## Installation
 
